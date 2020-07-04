@@ -2,7 +2,7 @@
 import Login from '../../modules/user/Login'
 import Signup from '../../modules/user/Signup'
 import Profile from '../../modules/user/Profile'
-import Product from '../../modules/user/Product'
+import ProductUSER from '../../modules/user/Product'
 import Subscriptions from '../../modules/user/Subscriptions'
 
 // User routes
@@ -23,9 +23,9 @@ export default {
     auth: true
   },
 
-  productList: {
+  productListUSER: {
     path: '/user/product',
-    component: Product,
+    component: ProductUSER,
     auth: true
   },
 

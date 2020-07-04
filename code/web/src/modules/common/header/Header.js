@@ -34,7 +34,7 @@ const Header = (props) => {
       <Grid alignCenter={true} style={{ marginTop: '1.5em' }}>
         <GridCell>
           {/* Logo */}
-          <Logo style={{ float: 'left' }}/>
+          <Logo style={{ float: 'left' }} />
 
           {/* Left menu */}
           <Menu style={{ float: 'left', marginTop: '0.5em', marginLeft: '2em' }}>
@@ -54,7 +54,9 @@ const Header = (props) => {
             props.user.isAuthenticated
               ?
               <Menu>
-                { props.user.details.role === 'ADMIN' && <MenuItem to={admin.dashboard.path} section="admin">Admin</MenuItem> }
+                {props.user.details.role === 'ADMIN' && <MenuItem to={admin.dashboard.path} section="admin">Admin</MenuItem>}
+
+                {props.user.details.role === 'USER' && <MenuItem to={user.productList.path} section="products">Products</MenuItem>}
 
                 <MenuItem to={crate.list.path}>Crates</MenuItem>
 

@@ -1,62 +1,155 @@
 // Imports
-import React from 'react'
+import React, { PureComponent } from 'react'
 import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
 import { Helmet } from 'react-helmet'
-import { Link } from 'react-router-dom'
 
 // UI Imports
-import { Grid, GridCell } from '../../ui/grid'
-import { H3, H4 } from '../../ui/typography'
-import Button from '../../ui/button'
-import { grey, grey2 } from '../../ui/common/colors'
+import { Grid, GridCell } from './../../ui/grid'
 
 // App Imports
-import userRoutes from '../../setup/routes/user'
-import { logout } from './api/actions'
+import { getList as getProductList, remove as removeProduct } from '../product/api/actions'
+import { messageShow, messageHide } from './../common/api/actions'
+import Loading from './../common/Loading'
+import EmptyMessage from './../common/EmptyMessage'
+import { routeImage } from './../../setup/routes'
 
 // Component
-const Product = (props) => (
-  <div>
-    {/* SEO */}
-    <Helmet>
-      <title>My Profile - Crate</title>
-    </Helmet>
+class Product extends PureComponent {
 
-    {/* Top title bar */}
-    <Grid style={{ backgroundColor: grey }}>
-      <GridCell style={{ padding: '2em', textAlign: 'center' }}>
-        <H3 font="secondary">My profile yella habubu</H3>
-      </GridCell>
-    </Grid>
+  // Runs on server only for SSR
+  static fetchData({ store }) {
+    return store.dispatch(getProductList())
+  }
 
-    <Grid>
-      <GridCell style={{ padding: '2em', textAlign: 'center' }}>
-        <H4 style={{ marginBottom: '0.5em' }}>{props.user.details.name}</H4>
+  // Runs on client only
+  componentDidMount() {
+    this.props.getProductList()
+  }
 
-        <p style={{ color: grey2, marginBottom: '2em' }}>{props.user.details.email}</p>
+  remove = (id) => {
+    if (id > 0) {
+      let check = confirm('Are you sure you want to delete this product?')
 
-        <Link to={userRoutes.subscriptions.path}>
-          <Button theme="primary">Subscriptions</Button>
-        </Link>
+      if (check) {
+        this.props.messageShow('Deleting, please wait...')
 
-        <Button theme="secondary" onClick={props.logout} style={{ marginLeft: '1em' }}>Logout</Button>
-      </GridCell>
-    </Grid>
-  </div>
-)
+        this.props.removeProduct({ id })
+          .then(response => {
+            if (response.status === 200) {
+              if (response.data.errors && response.data.errors.length > 0) {
+                this.props.messageShow(response.data.errors[0].message)
+              } else {
+                this.props.messageShow('Product deleted successfully.')
+
+                this.props.getProductList(false)
+              }
+            } else {
+              this.props.messageShow('Please try again.')
+            }
+          })
+          .catch(error => {
+            this.props.messageShow('There was some error. Please try again.')
+
+          })
+          .then(() => {
+            this.setState({
+              isLoading: false
+            })
+
+            window.setTimeout(() => {
+              this.props.messageHide()
+            }, 5000)
+          })
+      }
+    }
+  }
+
+  render() {
+    const { isLoading, list } = this.props.products
+
+    return (
+      <div>
+        {/* SEO */}
+        <Helmet>
+          <title>Products - Admin - Crate</title>
+        </Helmet>
+
+        {/* Product list */}
+        <Grid alignCenter={true} style={{ padding: '1em' }}>
+          <GridCell>
+            <table className="striped">
+              <thead>
+                <tr>
+                  <th>Image</th>
+                  <th>Name</th>
+                  <th>Description</th>
+                  <th>Created at</th>
+                  <th>Updated at</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {
+                  isLoading
+                    ? <tr>
+                      <td colSpan="6">
+                        <Loading message="loading products..." />
+                      </td>
+                    </tr>
+                    : list.length > 0
+                      ? list.map(({ id, image, name, description, createdAt, updatedAt }) => (
+                        <tr key={id}>
+                          <td>
+                            <img src={routeImage + image} alt={name} style={{ width: 100 }} />
+                          </td>
+
+                          <td>
+                            {name}
+                          </td>
+
+                          <td>
+                            {description}
+                          </td>
+
+                          <td>
+                            {new Date(parseInt(createdAt)).toDateString()}
+                          </td>
+
+                          <td>
+                            {new Date(parseInt(updatedAt)).toDateString()}
+                          </td>
+                        </tr>
+                      ))
+                      : <tr>
+                        <td colSpan="6">
+                          <EmptyMessage message="No products to show." />
+                        </td>
+                      </tr>
+                }
+              </tbody>
+            </table>
+          </GridCell>
+        </Grid>
+      </div>
+    )
+  }
+}
 
 // Component Properties
 Product.propTypes = {
-  user: PropTypes.object.isRequired,
-  logout: PropTypes.func.isRequired
+  products: PropTypes.object.isRequired,
+  getProductList: PropTypes.func.isRequired,
+  removeProduct: PropTypes.func.isRequired,
+  messageShow: PropTypes.func.isRequired,
+  messageHide: PropTypes.func.isRequired
 }
 
 // Component State
 function ProductState(state) {
   return {
-    user: state.user
+    products: state.products
   }
 }
 
-export default connect(ProductState, { logout })(Product)
+export default connect(ProductState, { getProductList, removeProduct, messageShow, messageHide })(Product)
